@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Remove every Traefik route created by configure-module (frontend catch-all
+# plus the per-path backend routes).
+
+import os
+import sys
+import json
+
+import agent
+import agent.tasks
+
+# stdin is consumed even if unused, to follow the action protocol.
+json.load(sys.stdin)
+
+default_traefik_id = agent.resolve_agent_id('traefik@node')
+if default_traefik_id is None:
+    sys.exit(2)
+
+module_id = os.environ['MODULE_ID']
+# Keep this list in sync with configure-module/20configure_traefik.
+backend_suffixes = ["api", "binaries", "agents", "getfile", "gethashlist", "getfound"]
+instances = [module_id] + [f"{module_id}-{s}" for s in backend_suffixes]
+
+for instance in instances:
+    response = agent.tasks.run(
+        agent_id=default_traefik_id,
+        action='delete-route',
+        data={'instance': instance},
+    )
+    agent.assert_exp(response['exit_code'] == 0)

@@ -1,0 +1,17 @@
+{
+  "name": "Hashtopolis",
+  "description": {
+    "en": "Distributed hashcat password recovery management",
+    "de": "Verteiltes hashcat-Passwort-Recovery-Management"
+  },
+  "categories": ["security"],
+  "authors": [
+    { "name": "tebbi", "email": "info@ebbinghaus.world" }
+  ],
+  "docs": {
+    "documentation_url": "https://docs.hashtopolis.org",
+    "bug_url": "https://github.com/tebbiworld/ns8-hashtopolis/issues",
+    "code_url": "https://github.com/tebbiworld/ns8-hashtopolis"
+  },
+  "source": "ghcr.io/tebbiworld/hashtopolis"
+}

@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Enable and (re)start the Hashtopolis services. Restarting the pod unit
+# cascades to the database, backend and frontend through the unit dependencies.
+
+import subprocess
+
+units = [
+    "hashtopolis.service",
+    "hashtopolis-db.service",
+    "hashtopolis-backend.service",
+    "hashtopolis-frontend.service",
+]
+
+subprocess.run(["systemctl", "--user", "enable", *units], check=True)
+subprocess.run(["systemctl", "--user", "restart", "hashtopolis.service"], check=True)

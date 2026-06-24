@@ -1,0 +1,48 @@
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# MySQL database for Hashtopolis. Runs inside the hashtopolis pod so the backend
+# can reach it on 127.0.0.1:3306.
+
+[Unit]
+Description=Hashtopolis database
+BindsTo=hashtopolis.service
+After=hashtopolis.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStartSec=120
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/hashtopolis-db.pid %t/hashtopolis-db.ctr-id
+ExecStart=/usr/bin/podman run \
+    --conmon-pidfile %t/hashtopolis-db.pid \
+    --cidfile %t/hashtopolis-db.ctr-id \
+    --cgroups=no-conmon \
+    --pod-id-file %t/hashtopolis.pod-id \
+    --replace -d --name hashtopolis-db \
+    --volume hashtopolis-db:/var/lib/mysql:Z \
+    --env MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD} \
+    --env MYSQL_DATABASE=hashtopolis \
+    --env MYSQL_USER=hashtopolis \
+    --env MYSQL_PASSWORD=${MYSQL_PASSWORD} \
+    --health-cmd "mysqladmin ping -h 127.0.0.1 -u root --password=${MYSQL_ROOT_PASSWORD} || exit 1" \
+    --health-interval 10s \
+    --health-timeout 5s \
+    --health-retries 12 \
+    ${MYSQL_IMAGE} \
+    --default-authentication-plugin=mysql_native_password \
+    --character-set-server=utf8mb4 \
+    --collation-server=utf8mb4_unicode_ci
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/hashtopolis-db.ctr-id -t 60
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/hashtopolis-db.ctr-id
+PIDFile=%t/hashtopolis-db.pid
+Type=forking
+SyslogIdentifier=%u
+
+[Install]
+WantedBy=default.target

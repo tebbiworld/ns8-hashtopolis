@@ -1,0 +1,15 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "get-configuration output",
+    "$id": "http://schema.nethserver.org/hashtopolis/get-configuration-output.json",
+    "description": "Get hashtopolis configuration",
+    "type": "object",
+    "properties": {
+        "host": { "type": "string" },
+        "http2https": { "type": "boolean" },
+        "lets_encrypt": { "type": "boolean" },
+        "backend_url": { "type": "string" },
+        "admin_username": { "type": "string" },
+        "admin_password": { "type": "string" }
+    }
+}

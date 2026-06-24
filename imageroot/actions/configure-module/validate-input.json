@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Configure hashtopolis",
+    "$id": "http://nethserver.org/json-schema/task/input/hashtopolis/configure-module",
+    "description": "Configure the Hashtopolis module",
+    "examples": [
+        {
+            "host": "hashtopolis.example.org",
+            "http2https": true,
+            "lets_encrypt": true
+        }
+    ],
+    "type": "object",
+    "required": ["host"],
+    "properties": {
+        "host": {
+            "type": "string",
+            "description": "Fully qualified domain name for Hashtopolis, like 'hashtopolis.example.org'",
+            "format": "hostname",
+            "pattern": "\\."
+        },
+        "lets_encrypt": {
+            "type": "boolean",
+            "title": "Let's Encrypt certificate",
+            "description": "Request a valid Let's Encrypt certificate for the host name."
+        },
+        "http2https": {
+            "type": "boolean",
+            "title": "HTTP to HTTPS redirection",
+            "description": "Redirect all HTTP requests to HTTPS."
+        }
+    }
+}

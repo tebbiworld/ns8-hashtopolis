@@ -1,0 +1,48 @@
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Hashtopolis backend (PHP API server). Runs inside the hashtopolis pod and
+# talks to MySQL on 127.0.0.1. It serves the API under /api and the agent
+# communication endpoints.
+
+[Unit]
+Description=Hashtopolis backend
+BindsTo=hashtopolis.service
+After=hashtopolis.service hashtopolis-db.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStartSec=300
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/hashtopolis-backend.pid %t/hashtopolis-backend.ctr-id
+# Wait for MySQL to pass its health check before starting the backend, which
+# runs database migrations on first boot.
+ExecStartPre=/bin/bash -c 'for i in $(seq 1 120); do [ "$(/usr/bin/podman inspect -f "{{.State.Health.Status}}" hashtopolis-db 2>/dev/null)" = "healthy" ] && exit 0; sleep 2; done; echo "timeout waiting for hashtopolis-db" >&2; exit 1'
+ExecStart=/usr/bin/podman run \
+    --conmon-pidfile %t/hashtopolis-backend.pid \
+    --cidfile %t/hashtopolis-backend.ctr-id \
+    --cgroups=no-conmon \
+    --pod-id-file %t/hashtopolis.pod-id \
+    --replace -d --name hashtopolis-backend \
+    --volume hashtopolis-data:/usr/local/share/hashtopolis:Z \
+    --env HASHTOPOLIS_DB_USER=hashtopolis \
+    --env HASHTOPOLIS_DB_PASS=${MYSQL_PASSWORD} \
+    --env HASHTOPOLIS_DB_HOST=127.0.0.1 \
+    --env HASHTOPOLIS_DB_DATABASE=hashtopolis \
+    --env HASHTOPOLIS_ADMIN_USER=${ADMIN_USER} \
+    --env HASHTOPOLIS_ADMIN_PASSWORD=${ADMIN_PASSWORD} \
+    --env HASHTOPOLIS_APIV2_ENABLE=1 \
+    ${BACKEND_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/hashtopolis-backend.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/hashtopolis-backend.ctr-id
+PIDFile=%t/hashtopolis-backend.pid
+Type=forking
+SyslogIdentifier=%u
+
+[Install]
+WantedBy=default.target

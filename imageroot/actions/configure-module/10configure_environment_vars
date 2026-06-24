@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+import sys
+import json
+
+import agent
+
+data = json.load(sys.stdin)
+
+host = data.get("host")
+h2hs = data.get("http2https", True)
+lets_encrypt = data.get("lets_encrypt", False)
+
+agent.set_env("TRAEFIK_HOST", host)
+agent.set_env("TRAEFIK_HTTP2HTTPS", h2hs)
+
+# The Angular frontend calls the backend from the user's browser, so the URL
+# must use the same scheme the site is served with. Use https whenever TLS is
+# in play (Let's Encrypt or HTTP->HTTPS redirection), otherwise plain http.
+scheme = "https" if (lets_encrypt or h2hs) else "http"
+agent.set_env("BACKEND_URL", f"{scheme}://{host}/api/v2")
+
+agent.dump_env()

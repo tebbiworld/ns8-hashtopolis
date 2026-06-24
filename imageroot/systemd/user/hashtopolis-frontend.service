@@ -1,0 +1,40 @@
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Hashtopolis Angular frontend. It runs as a standalone container (NOT in the
+# pod) because it also listens on port 80. The Angular app talks to the backend
+# from the user's browser using HASHTOPOLIS_BACKEND_URL, so it does not need
+# container-level networking to the backend.
+
+[Unit]
+Description=Hashtopolis frontend
+BindsTo=hashtopolis.service
+After=hashtopolis.service hashtopolis-backend.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStartSec=120
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/hashtopolis-frontend.pid %t/hashtopolis-frontend.ctr-id
+ExecStart=/usr/bin/podman run \
+    --conmon-pidfile %t/hashtopolis-frontend.pid \
+    --cidfile %t/hashtopolis-frontend.ctr-id \
+    --cgroups=no-conmon \
+    --replace -d --name hashtopolis-frontend \
+    --publish 127.0.0.1:${FRONTEND_PORT}:80 \
+    --sysctl net.ipv4.ip_unprivileged_port_start=0 \
+    --env HASHTOPOLIS_BACKEND_URL=${BACKEND_URL} \
+    ${FRONTEND_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/hashtopolis-frontend.ctr-id -t 30
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/hashtopolis-frontend.ctr-id
+PIDFile=%t/hashtopolis-frontend.pid
+Type=forking
+SyslogIdentifier=%u
+
+[Install]
+WantedBy=default.target
