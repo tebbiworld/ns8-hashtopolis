@@ -5,12 +5,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-# Publish Hashtopolis through Traefik on a single host name.
+# Publish Hashtopolis through Traefik with a single host route.
 #
-# The Angular frontend is the catch-all (it serves the SPA), while the backend
-# serves the API and a set of PHP endpoints at the document root that agents
-# need (binary, file and hashlist downloads). Those paths are routed to the
-# backend with a higher priority so they win over the frontend catch-all.
+# Up to 1.0.1 the module created seven routes: a catch-all for the Angular
+# frontend plus one higher-priority path route per backend endpoint. Splitting
+# the paths is an internal matter of this module, it does not belong in the
+# cluster reverse proxy, and it broke as soon as an endpoint was forgotten
+# (/static, needed for the agent's 7zr download). The module now runs its own
+# nginx inside the pod (see imageroot/nginx/default.conf) and exposes a single
+# port, so one plain host route is enough.
 
 import os
 import sys
@@ -18,50 +21,22 @@ import json
 
 import agent
 
-# Backend HTTP entry points that must reach hashtopolis-backend.
-# (suffix used as the route instance key, request path)
-BACKEND_PATHS = [
-    ("api", "/api"),
-    ("binaries", "/binaries"),
-    ("agents", "/agents.php"),
-    ("getfile", "/getFile.php"),
-    ("gethashlist", "/getHashlist.php"),
-    ("getfound", "/getFound.php"),
-]
-
 data = json.load(sys.stdin)
 
 host = data["host"]
 h2hs = data.get("http2https", True)
 module_id = os.environ["MODULE_ID"]
-backend_port = os.environ["BACKEND_PORT"]
-frontend_port = os.environ["FRONTEND_PORT"]
-backend_url = "http://127.0.0.1:" + backend_port
+http_port = os.environ["HTTP_PORT"]
 
-# Frontend: catch-all route on the host name.
-frontend_route = {
+route = {
     "instance": module_id,
-    "url": "http://127.0.0.1:" + frontend_port,
+    "url": "http://127.0.0.1:" + http_port,
     "host": host,
     "http2https": h2hs,
     "lets_encrypt_check": True,
     "lets_encrypt_cleanup": True,
-    "priority": 2,
 }
 if "lets_encrypt" in data:
-    frontend_route["lets_encrypt"] = data["lets_encrypt"]
-agent.set_route(frontend_route)
+    route["lets_encrypt"] = data["lets_encrypt"]
 
-# Backend: one higher-priority route per backend path.
-for suffix, path in BACKEND_PATHS:
-    backend_route = {
-        "instance": f"{module_id}-{suffix}",
-        "url": backend_url,
-        "host": host,
-        "path": path,
-        "http2https": h2hs,
-        "priority": 3,
-    }
-    if "lets_encrypt" in data:
-        backend_route["lets_encrypt"] = data["lets_encrypt"]
-    agent.set_route(backend_route)
+agent.set_route(route)

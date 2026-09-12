@@ -5,11 +5,29 @@
     "description": "Get hashtopolis configuration",
     "type": "object",
     "properties": {
-        "host": { "type": "string" },
-        "http2https": { "type": "boolean" },
-        "lets_encrypt": { "type": "boolean" },
-        "backend_url": { "type": "string" },
-        "admin_username": { "type": "string" },
-        "admin_password": { "type": "string" }
+        "host": {
+            "type": "string"
+        },
+        "http2https": {
+            "type": "boolean"
+        },
+        "lets_encrypt": {
+            "type": "boolean"
+        },
+        "public_url": {
+            "type": "string"
+        },
+        "backend_url": {
+            "type": "string"
+        },
+        "agent_url": {
+            "type": "string"
+        },
+        "admin_username": {
+            "type": "string"
+        },
+        "admin_password": {
+            "type": "string"
+        }
     }
 }

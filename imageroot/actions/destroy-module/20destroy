@@ -5,8 +5,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-# Remove every Traefik route created by configure-module (frontend catch-all
-# plus the per-path backend routes).
+# Remove the Traefik route created by configure-module. Instances created by
+# 1.0.x also had six per-path backend routes; they are dropped by the update
+# hook, but delete them here as well so a direct uninstall of an old instance
+# leaves nothing behind.
 
 import os
 import sys
@@ -23,14 +25,14 @@ if default_traefik_id is None:
     sys.exit(2)
 
 module_id = os.environ['MODULE_ID']
-# Keep this list in sync with configure-module/20configure_traefik.
-backend_suffixes = ["api", "binaries", "agents", "getfile", "gethashlist", "getfound"]
-instances = [module_id] + [f"{module_id}-{s}" for s in backend_suffixes]
+# Route instances created by 1.0.x, kept for cleanup only.
+legacy_suffixes = ["api", "binaries", "agents", "getfile", "gethashlist", "getfound"]
 
-for instance in instances:
+for instance in [module_id] + [f"{module_id}-{s}" for s in legacy_suffixes]:
     response = agent.tasks.run(
         agent_id=default_traefik_id,
         action='delete-route',
         data={'instance': instance},
     )
-    agent.assert_exp(response['exit_code'] == 0)
+    if instance == module_id:
+        agent.assert_exp(response['exit_code'] == 0)

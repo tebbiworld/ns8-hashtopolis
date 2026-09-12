@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Migration for instances created by 1.0.x, executed by the node agent's
+# update-module.d hook (actions/update-module/50run_scriptdir).
+#
+# 1.1.0 replaced the seven Traefik routes (frontend catch-all plus six backend
+# path routes) with a single host route, and publishes a single port: the
+# frontend nginx now runs inside the pod and proxies the backend paths. Carry
+# the published port over, repoint the remaining route and delete the obsolete
+# path routes.
+#
+
+import os
+import sys
+
+import agent
+import agent.tasks
+
+envfile = os.path.join(os.environ["AGENT_STATE_DIR"], "environment")
+env = agent.read_envfile(envfile)
+module_id = os.environ["MODULE_ID"]
+
+# The pod keeps its published port: HTTP_PORT takes over the port that used to
+# publish the backend. The second allocated port (FRONTEND_PORT) is not used any
+# more; it stays assigned to this instance and is released on uninstall.
+http_port = (env.get("HTTP_PORT") or env.get("BACKEND_PORT")
+             or os.environ.get("TCP_PORTS", "").split(",")[0].strip())
+if not http_port:
+    print("cannot determine the published port, migration skipped", file=sys.stderr)
+    sys.exit(1)
+if not env.get("HTTP_PORT"):
+    agent.set_env("HTTP_PORT", http_port)
+    print(f"HTTP_PORT seeded with {http_port}")
+
+# Public base URL: PUBLIC_URL stays empty, which means "derive from the host name
+# and the Traefik settings of this node" (see configure-module).
+if "PUBLIC_URL" not in env:
+    agent.set_env("PUBLIC_URL", "")
+
+traefik_id = agent.resolve_agent_id("traefik@node")
+if traefik_id is None:
+    print("traefik agent not found, routes not migrated", file=sys.stderr)
+    sys.exit(0)
+
+try:
+    route = agent.get_route(module_id)
+except Exception:
+    route = {}
+
+host = env.get("TRAEFIK_HOST", "")
+if host and not env.get("BASE_URL"):
+    # Same rule as configure-module: https when this node terminates TLS for the
+    # instance (Let's Encrypt certificate or HTTP->HTTPS redirection).
+    scheme = "https" if (route.get("lets_encrypt", False)
+                         or env.get("TRAEFIK_HTTP2HTTPS") == "True") else "http"
+    base_url = f"{scheme}://{host}"
+    agent.set_env("BASE_URL", base_url)
+    # 1.0.1 used a protocol-relative backend URL; with a single origin the
+    # absolute one is correct again and makes the agent registration URL
+    # displayed by the frontend copyable.
+    if not (env.get("BACKEND_URL", "").startswith("http")):
+        agent.set_env("BACKEND_URL", f"{base_url}/api/v2")
+
+# Point the remaining route at the new entry point. In 1.0.x this route served
+# the Angular frontend on its own port (FRONTEND_PORT); that container is now
+# part of the pod, and the pod publishes HTTP_PORT, so the old target would
+# answer with a gateway error.
+new_url = "http://127.0.0.1:" + http_port
+if route and route.get("url") != new_url:
+    route["instance"] = module_id
+    route["url"] = new_url
+    agent.set_route(route)
+    print(f"route {module_id} now points to {new_url}")
+
+# Drop the per-path backend routes created by 1.0.x.
+for suffix in ("api", "binaries", "agents", "getfile", "gethashlist", "getfound"):
+    instance = f"{module_id}-{suffix}"
+    response = agent.tasks.run(
+        agent_id=traefik_id,
+        action="delete-route",
+        data={"instance": instance},
+    )
+    if response["exit_code"] == 0:
+        print(f"removed obsolete route {instance}")

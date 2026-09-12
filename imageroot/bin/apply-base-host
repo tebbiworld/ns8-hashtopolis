@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Make Hashtopolis build absolute URLs with the public scheme and host name.
+#
+# Util::buildServerUrl() derives the URL from $_SERVER['HTTPS'] and
+# $_SERVER['SERVER_PORT']. Behind a TLS-terminating reverse proxy the backend
+# only ever sees plain http on port 80, so agent downloads such as
+# http://<host>/static/7zr.bin were handed out over http. Setting HTTPS through
+# an Apache SetEnvIf is not enough: SERVER_PORT stays 80 and cannot be
+# overridden from the environment, which makes buildServerUrl() return the
+# broken value "https://:80" (verified against the backend image).
+#
+# Hashtopolis provides a supported override for exactly this situation: the
+# "baseHost" configuration item short-circuits buildServerUrl() and is returned
+# verbatim. Write it into the database, which is what an administrator setting
+# the value in the user interface would do.
+#
+# Called by configure-module and by the update hook, so read the values from the
+# environment file as well: an update hook does not inherit variables that were
+# seeded during the same run.
+#
+
+import os
+import sys
+import time
+import subprocess
+
+import agent
+
+state_dir = os.environ.get("AGENT_STATE_DIR", "state")
+try:
+    env = agent.read_envfile(os.path.join(state_dir, "environment"))
+except OSError:
+    env = {}
+
+
+def value(key):
+    return os.environ.get(key) or env.get(key, "")
+
+
+base_url = value("BASE_URL")
+if not base_url:
+    print("BASE_URL is not set, skipping baseHost configuration", file=sys.stderr)
+    sys.exit(0)
+
+
+def mysql(statement):
+    """Run one statement in the module's database container."""
+    return subprocess.run(
+        [
+            "podman", "exec",
+            "--env", "MYSQL_PWD=" + value("MYSQL_ROOT_PASSWORD"),
+            "hashtopolis-db",
+            "mysql", "-uroot", "-N", "-B", "hashtopolis",
+            "-e", statement,
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+
+# The Config table only exists after the backend has run its migrations, which
+# happens while the container starts. Wait for it instead of failing the whole
+# configuration.
+deadline = time.monotonic() + 300
+probe = None
+while time.monotonic() < deadline:
+    probe = mysql("SELECT COUNT(*) FROM Config WHERE item='baseHost'")
+    if probe.returncode == 0:
+        break
+    time.sleep(5)
+else:
+    print("timeout waiting for the Hashtopolis database, baseHost not set: "
+          + (probe.stderr.strip() if probe else ""), file=sys.stderr)
+    sys.exit(0)
+
+# base_url comes from a validated host name or the public_url field, both of
+# which are restricted to URL characters; quote it anyway.
+escaped = base_url.replace("\\", "\\\\").replace("'", "\\'")
+result = mysql(f"UPDATE Config SET value='{escaped}' WHERE item='baseHost'")
+if result.returncode != 0:
+    print("failed to set baseHost: " + result.stderr.strip(), file=sys.stderr)
+    sys.exit(0)
+
+print(f"baseHost set to {base_url}")

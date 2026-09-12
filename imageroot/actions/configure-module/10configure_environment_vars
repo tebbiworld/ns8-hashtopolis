@@ -15,15 +15,30 @@ data = json.load(sys.stdin)
 host = data.get("host")
 h2hs = data.get("http2https", True)
 lets_encrypt = data.get("lets_encrypt", False)
+public_url = (data.get("public_url") or "").strip().rstrip("/")
 
 agent.set_env("TRAEFIK_HOST", host)
 agent.set_env("TRAEFIK_HTTP2HTTPS", h2hs)
 
-# The Angular frontend calls the backend from the user's browser. Use a
-# protocol-relative URL so the browser inherits the scheme the page was loaded
-# with. This avoids mixed-content errors for plain http, https, and behind a
-# TLS-terminating cross-node gateway (where the public scheme is https even if
-# this node itself serves plain http).
-agent.set_env("BACKEND_URL", f"//{host}/api/v2")
+# Public base URL of this instance. Hashtopolis has to embed absolute URLs in
+# API answers (agent binary downloads, v2 pagination links) and in the agent
+# registration URL shown by the frontend, so a concrete scheme is required.
+#
+# By default it is derived from the Traefik settings of this node. That is wrong
+# when the instance is published through a gateway node which terminates TLS
+# while this node itself serves plain http; for that case the administrator can
+# override the whole base URL in the Settings page.
+if public_url:
+    base_url = public_url
+else:
+    scheme = "https" if (lets_encrypt or h2hs) else "http"
+    base_url = f"{scheme}://{host}"
+
+agent.set_env("PUBLIC_URL", public_url)
+agent.set_env("BASE_URL", base_url)
+
+# The Angular frontend reads this at startup (assets/config.json) and derives
+# both the API endpoint and the agent registration URL from it.
+agent.set_env("BACKEND_URL", f"{base_url}/api/v2")
 
 agent.dump_env()

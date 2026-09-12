@@ -52,11 +52,26 @@
               <template slot="text-left">{{ $t("settings.disabled") }}</template>
               <template slot="text-right">{{ $t("settings.enabled") }}</template>
             </cv-toggle>
+            <cv-text-input
+              :label="$t('settings.public_url')"
+              v-model.trim="public_url"
+              :placeholder="$t('settings.public_url_placeholder')"
+              :helper-text="$t('settings.public_url_helper')"
+              :disabled="loading.getConfiguration || loading.configureModule"
+              :invalid-message="$t(error.public_url)"
+              ref="public_url"
+              class="public-url"
+            ></cv-text-input>
             <NsInlineNotification
               v-if="backend_url"
               kind="info"
               :title="$t('settings.agent_url')"
-              :description="$t('settings.agent_url_desc', { url: backend_url })"
+              :description="
+                $t('settings.agent_url_desc', {
+                  agent: agent_url,
+                  api: backend_url,
+                })
+              "
               :showCloseButton="false"
               class="info-tile"
             />
@@ -129,7 +144,9 @@ export default {
       host: "",
       lets_encrypt: false,
       http2https: false,
+      public_url: "",
       backend_url: "",
+      agent_url: "",
       admin_username: "",
       admin_password: "",
       loading: {
@@ -140,6 +157,7 @@ export default {
         getConfiguration: "",
         configureModule: "",
         host: "",
+        public_url: "",
       },
     };
   },
@@ -202,7 +220,9 @@ export default {
       this.host = config.host || "";
       this.lets_encrypt = !!config.lets_encrypt;
       this.http2https = !!config.http2https;
+      this.public_url = config.public_url || "";
       this.backend_url = config.backend_url || "";
+      this.agent_url = config.agent_url || "";
       this.admin_username = config.admin_username || "";
       this.admin_password = config.admin_password || "";
       this.focusElement("host");
@@ -259,6 +279,7 @@ export default {
             host: this.host,
             lets_encrypt: this.lets_encrypt,
             http2https: this.http2https,
+            public_url: this.public_url,
           },
           extra: {
             title: this.$t("settings.configure_instance", {
@@ -294,6 +315,9 @@ export default {
   margin-top: $spacing-06;
 }
 .info-tile {
+  margin-top: $spacing-06;
+}
+.public-url {
   margin-top: $spacing-06;
 }
 </style>

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# The node agent's update-module action extracts the new image and runs these
+# hooks, but it does not restart the module's units (see the core action
+# update-module/50run_scriptdir). Without a restart the running containers keep
+# the command line of the previous version, so a changed unit file - such as the
+# single published port and the new frontend configuration in 1.1.0 - would only take effect at the next reboot.
+#
+
+set -e
+
+# Redirect any output to the journal (stderr)
+exec 1>&2
+
+systemctl --user daemon-reload
+systemctl --user restart hashtopolis.service

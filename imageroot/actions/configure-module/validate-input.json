@@ -7,11 +7,14 @@
         {
             "host": "hashtopolis.example.org",
             "http2https": true,
-            "lets_encrypt": true
+            "lets_encrypt": true,
+            "public_url": "https://hashtopolis.example.org"
         }
     ],
     "type": "object",
-    "required": ["host"],
+    "required": [
+        "host"
+    ],
     "properties": {
         "host": {
             "type": "string",
@@ -28,6 +31,12 @@
             "type": "boolean",
             "title": "HTTP to HTTPS redirection",
             "description": "Redirect all HTTP requests to HTTPS."
+        },
+        "public_url": {
+            "type": "string",
+            "title": "Public URL",
+            "description": "Base URL under which this instance is reachable from agents and browsers, like 'https://hashtopolis.example.org'. Leave empty to derive it from the host name and the Traefik settings of this node. Set it when the instance is published through a gateway node that terminates TLS while this node serves plain http.",
+            "pattern": "^$|^https?://[A-Za-z0-9._-]+(:[0-9]{1,5})?$"
         }
     }
 }

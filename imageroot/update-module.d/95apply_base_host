@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# An update does not run configure-module, so refresh the Hashtopolis
+# "baseHost" setting here as well. Without it an instance updated from 1.0.x
+# would keep handing out http download URLs until the administrator saves the
+# module settings once.
+#
+
+set -e
+
+# Redirect any output to the journal (stderr)
+exec 1>&2
+
+"${AGENT_INSTALL_DIR}"/bin/apply-base-host

@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Write the public base URL into the Hashtopolis "baseHost" setting. The work is
+# done by bin/apply-base-host, which is also called by the update hook.
+
+import os
+import sys
+import subprocess
+
+import agent
+
+agent.set_weight(os.path.basename(__file__), 1)
+
+helper = os.path.join(os.environ["AGENT_INSTALL_DIR"], "bin", "apply-base-host")
+sys.exit(subprocess.run([helper]).returncode)

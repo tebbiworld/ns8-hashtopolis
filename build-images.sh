@@ -41,11 +41,11 @@ buildah run \
 # Add imageroot and the compiled UI to the container image
 buildah add "${container}" imageroot /imageroot
 buildah add "${container}" ui/dist /ui
-# Setup the entrypoint, reserve two TCP ports (frontend + backend), declare the
-# runtime images and mark the module as rootless.
+# Setup the entrypoint, reserve one TCP port (the module's own nginx is the only
+# entry point), declare the runtime images and mark the module as rootless.
 buildah config --entrypoint=/ \
     --label="org.nethserver.authorizations=traefik@node:routeadm" \
-    --label="org.nethserver.tcp-ports-demand=2" \
+    --label="org.nethserver.tcp-ports-demand=1" \
     --label="org.nethserver.rootfull=0" \
     --label="org.nethserver.images=${backend_image} ${frontend_image} ${mysql_image}" \
     "${container}"

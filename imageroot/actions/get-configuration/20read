@@ -19,7 +19,14 @@ config["http2https"] = os.getenv("TRAEFIK_HTTP2HTTPS") == "True"
 route = agent.get_route(os.environ["MODULE_ID"])
 config["lets_encrypt"] = route.get("lets_encrypt", False)
 
+# Public base URL override (empty = derived from host + Traefik settings).
+config["public_url"] = os.getenv("PUBLIC_URL", "")
+
 config["backend_url"] = os.getenv("BACKEND_URL", "")
+
+# URL a v1 agent has to be registered with (python agent: --url).
+base_url = os.getenv("BASE_URL", "")
+config["agent_url"] = f"{base_url}/api/server.php" if base_url else ""
 
 # Initial admin credentials seeded on first start (valid until changed in the
 # Hashtopolis UI).

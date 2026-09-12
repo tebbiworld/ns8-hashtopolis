@@ -13,18 +13,31 @@ The module runs three rootless containers:
 - **hashtopolis-db** — a dedicated `mysql:8.0` database, data kept in the
   `hashtopolis-db` named volume
 
-Backend and database share one pod; the frontend runs as a separate container
-because it also listens on port 80.
+All three containers share one pod, so they reach each other over the pod's
+localhost.
 
 ## Routing
 
-Traefik publishes everything on a single host name:
+The module publishes **one** port and creates **one** Traefik route: a plain
+host rule with the usual Let's Encrypt and HTTP→HTTPS options. Splitting the
+request paths is done inside the module by the frontend's nginx, which is
+configured by `imageroot/nginx/default.conf`:
 
-- `https://<host>/` → Angular frontend
-- `https://<host>/api` → backend API and agent communication (higher priority)
+- `/` → the Angular single page application (nginx, port 8080 in the pod)
+- `/api/` (v1 `api/server.php` and v2 `api/v2`), `/static/` (7zr and uftpd agent
+  binaries), `/binaries/`, `/agents.php`, `/getFile.php`, `/getFound.php`,
+  `/getHashlist.php` → Apache in the backend container on port 80 in the pod
 
-The frontend talks to the backend from the browser via `HASHTOPOLIS_BACKEND_URL`
-(`https://<host>/api/v2`); Hashtopolis agents use the same `/api` URL.
+Hashtopolis has to hand out absolute URLs (agent binary downloads, v2 pagination
+links). Because the backend only ever sees plain http behind the reverse proxy,
+the module writes the public base URL into the Hashtopolis `baseHost` setting,
+which overrides the auto-detection. The base URL is derived from the host name
+and the Traefik settings, or taken from the optional **Public URL** field —
+use that field when the instance is published through a gateway node which
+terminates TLS while this node serves plain http.
+
+Agents are registered with `<base URL>/api/server.php`, the web interface uses
+`<base URL>/api/v2`.
 
 ## Install
 

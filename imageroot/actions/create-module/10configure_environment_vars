@@ -5,9 +5,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-# Generate the initial environment for a fresh Hashtopolis instance: split the
-# two allocated TCP ports into named variables and create the database and
-# admin secrets.
+# Generate the initial environment for a fresh Hashtopolis instance: pick the
+# published TCP port and create the database and admin secrets.
 
 import os
 import secrets
@@ -15,14 +14,11 @@ import secrets
 import agent
 
 # The node allocates org.nethserver.tcp-ports-demand ports and exposes them as
-# a comma-separated TCP_PORTS list. The first one publishes the backend, the
-# second the Angular frontend.
+# a comma-separated TCP_PORTS list. Since 1.1.0 the module publishes a single
+# port: the frontend nginx serves the Angular application and proxies the
+# backend paths inside the pod, so only one entry point is exposed.
 tcp_ports = [p.strip() for p in os.environ.get("TCP_PORTS", "").split(",") if p.strip()]
-backend_port = tcp_ports[0]
-frontend_port = tcp_ports[1] if len(tcp_ports) > 1 else str(int(backend_port) + 1)
-
-agent.set_env("BACKEND_PORT", backend_port)
-agent.set_env("FRONTEND_PORT", frontend_port)
+agent.set_env("HTTP_PORT", tcp_ports[0])
 
 # Database and application secrets.
 agent.set_env("MYSQL_ROOT_PASSWORD", secrets.token_hex(16))
