@@ -18,8 +18,8 @@ reponame="hashtopolis"
 # Pin the application images used at runtime. They are declared in the
 # org.nethserver.images label so the node agent pre-pulls them and exposes
 # their reference as ${BACKEND_IMAGE}, ${FRONTEND_IMAGE} and ${MYSQL_IMAGE}.
-backend_image="docker.io/hashtopolis/backend:latest"
-frontend_image="docker.io/hashtopolis/frontend:latest"
+backend_image="docker.io/hashtopolis/backend@sha256:f8ea58f6f116cb67b559e351ca466687ae564b8942a83b453bcd6dbdde0f654d"
+frontend_image="docker.io/hashtopolis/frontend@sha256:5749f8d6835205d390f8371cf55ac9a141248aa3e32902c8af42a6e939036732"
 mysql_image="docker.io/library/mysql:8.0"
 
 # Create a new empty container image

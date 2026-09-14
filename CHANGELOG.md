@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 — 2026-09-14
+
+### Changed
+
+- Runtime images pinned by digest to the Hashtopolis `latest` builds of 2026-09-09 (backend `f8ea58f6…`, frontend `5749f8d6…`); upstream does not tag releases any more. Every installation now runs the same build; newer upstream builds arrive as module updates (automatic every ~6 weeks).
+
 All notable changes to this module are documented here. Releases before 1.1.0
 are described in the GitHub release notes and the git history.
 
