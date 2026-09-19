@@ -43,11 +43,13 @@ buildah add "${container}" imageroot /imageroot
 buildah add "${container}" ui/dist /ui
 # Setup the entrypoint, reserve one TCP port (the module's own nginx is the only
 # entry point), declare the runtime images and mark the module as rootless.
+# The bulk-data volumes can be placed on an additional disk at install time.
 buildah config --entrypoint=/ \
     --label="org.nethserver.authorizations=traefik@node:routeadm" \
     --label="org.nethserver.tcp-ports-demand=1" \
     --label="org.nethserver.rootfull=0" \
     --label="org.nethserver.images=${backend_image} ${frontend_image} ${mysql_image}" \
+    --label="org.nethserver.volumes=hashtopolis-data" \
     "${container}"
 # Commit the image
 buildah commit "${container}" "${repobase}/${reponame}"
