@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Re-apply the restored settings: every field configure-module accepts is passed.
+
+import os
+import sys
+
+import agent
+
+env = os.environ
+
+
+def flag(name, default):
+    return env.get(name, default).lower() == "true"
+
+
+if not env.get("TRAEFIK_HOST"):
+    # The original instance was backed up before it was ever configured: there
+    # is nothing to re-apply, and configure-module requires a host name.
+    print(agent.SD_NOTICE + "no host name in the restored settings: configure the module from the UI", file=sys.stderr)
+    sys.exit(0)
+
+data = {
+    "host": env["TRAEFIK_HOST"],
+    "http2https": flag("TRAEFIK_HTTP2HTTPS", "True"),
+    "lets_encrypt": flag("TRAEFIK_LETS_ENCRYPT", "False"),
+    "public_url": env.get("PUBLIC_URL", ""),
+}
+if "TRAEFIK_LETS_ENCRYPT" not in env:
+    # A backup taken with a module version that did not record the setting: say
+    # so instead of silently asserting "off". The route is created without a
+    # certificate request; enable Let's Encrypt again in the settings.
+    data.pop("lets_encrypt", None)
+    print(agent.SD_WARNING + "the backup does not tell whether Let's Encrypt was enabled: the route is restored without it", file=sys.stderr)
+
+response = agent.tasks.run(agent_id=env["AGENT_ID"], action="configure-module", data=data)
+agent.assert_exp(response["exit_code"] == 0, "The configure-module subtask failed!")

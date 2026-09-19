@@ -14,6 +14,8 @@ After=hashtopolis.service
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
 EnvironmentFile=%S/state/environment
+# Secrets are kept out of state/environment (mirrored to Redis).
+EnvironmentFile=-%S/state/passwords.env
 WorkingDirectory=%S/state
 Restart=always
 TimeoutStartSec=120
@@ -26,11 +28,11 @@ ExecStart=/usr/bin/podman run \
     --pod-id-file %t/hashtopolis.pod-id \
     --replace -d --name hashtopolis-db \
     --volume hashtopolis-db:/var/lib/mysql:Z \
-    --env MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD} \
+    --env MYSQL_ROOT_PASSWORD \
     --env MYSQL_DATABASE=hashtopolis \
     --env MYSQL_USER=hashtopolis \
-    --env MYSQL_PASSWORD=${MYSQL_PASSWORD} \
-    --health-cmd "mysqladmin ping -h 127.0.0.1 -u root --password=${MYSQL_ROOT_PASSWORD} || exit 1" \
+    --env MYSQL_PASSWORD \
+    --health-cmd "mysqladmin ping -h 127.0.0.1 -u root --password=\"$$MYSQL_ROOT_PASSWORD\" || exit 1" \
     --health-interval 10s \
     --health-timeout 5s \
     --health-retries 12 \

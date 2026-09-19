@@ -19,6 +19,9 @@ public_url = (data.get("public_url") or "").strip().rstrip("/")
 
 agent.set_env("TRAEFIK_HOST", host)
 agent.set_env("TRAEFIK_HTTP2HTTPS", h2hs)
+if "lets_encrypt" in data:
+    # kept so restore-module can re-create the route with the same setting
+    agent.set_env("TRAEFIK_LETS_ENCRYPT", data["lets_encrypt"])
 
 # Public base URL of this instance. Hashtopolis has to embed absolute URLs in
 # API answers (agent binary downloads, v2 pagination links) and in the agent
@@ -41,4 +44,3 @@ agent.set_env("BASE_URL", base_url)
 # both the API endpoint and the agent registration URL from it.
 agent.set_env("BACKEND_URL", f"{base_url}/api/v2")
 
-agent.dump_env()
