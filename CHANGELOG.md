@@ -18,7 +18,7 @@ Alignment with the NethServer module conventions (NethServer/agents skills).
 
 ### Platform integration
 
-- **Clone and move.** New `clone-module` step (a link to the restore step): a cloned or moved instance gets its route and settings back instead of coming up unconfigured.
+- **Clone and move.** New `clone-module` step (a link to the restore step): a cloned or moved instance gets its route and settings back instead of coming up unconfigured. The settings are read from the source instance, including those a new instance starts with a default for.
 - `org.nethserver.volumes`: the bulk-data volume(s) `hashtopolis-data` can be placed on an additional disk when the module is installed.
 - Release notes are linked from the software centre (`relnotes_url`).
 
