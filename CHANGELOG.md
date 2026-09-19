@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.0 — 2026-09-19
+
+Alignment with the NethServer module conventions (NethServer/agents skills).
+
+### Changed
+
+- **Secrets moved out of the module environment.** The MySQL passwords and the initial admin password are now kept in `state/passwords.env` (mode 0600) instead of `state/environment`, which NS8 mirrors to Redis in plain text. Existing installations are migrated on update; the values do not change. The secrets are no longer passed on the podman command line or embedded in the container health check.
+- **Module backup now contains the data.** New `etc/state-include.conf`: the backup holds a consistent MySQL dump written by `module-dump-state`, the secrets file and the `hashtopolis-data` volume (files, hashlists, agent binaries). Before, only the module environment was saved.
+- **Working restore.** New `restore-module` steps rebuild the database from the dump and re-apply every setting.
+- MySQL pinned to `8.0.46` instead of the rolling `8.0` tag.
+- Service restarts list every unit of the pod explicitly; update hooks log to stderr.
+
+### Added
+
+- Robot Framework tests (install, update from the previous release, backup and restore) run on real NS8 nodes through `stephdl/ns8-ci-actions`.
+
 ## 1.1.1 — 2026-09-14
 
 ### Changed
