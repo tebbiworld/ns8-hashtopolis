@@ -32,6 +32,7 @@ import time
 import subprocess
 
 import agent
+import modsecrets
 
 state_dir = os.environ.get("AGENT_STATE_DIR", "state")
 try:
@@ -55,13 +56,15 @@ def mysql(statement):
     return subprocess.run(
         [
             "podman", "exec",
-            "--env", "MYSQL_PWD=" + value("MYSQL_ROOT_PASSWORD"),
+            "--env", "MYSQL_PWD",
             "hashtopolis-db",
             "mysql", "-uroot", "-N", "-B", "hashtopolis",
             "-e", statement,
         ],
         capture_output=True,
         text=True,
+        # the password travels in the process environment, not on the command line
+        env=dict(os.environ, MYSQL_PWD=modsecrets.get("MYSQL_ROOT_PASSWORD")),
     )
 
 

@@ -9,7 +9,6 @@
 # published TCP port and create the database and admin secrets.
 
 import os
-import secrets
 
 import agent
 
@@ -21,10 +20,6 @@ tcp_ports = [p.strip() for p in os.environ.get("TCP_PORTS", "").split(",") if p.
 agent.set_env("HTTP_PORT", tcp_ports[0])
 
 # Database and application secrets.
-agent.set_env("MYSQL_ROOT_PASSWORD", secrets.token_hex(16))
-agent.set_env("MYSQL_PASSWORD", secrets.token_hex(16))
 agent.set_env("ADMIN_USER", "admin")
-agent.set_env("ADMIN_PASSWORD", secrets.token_urlsafe(12))
 
 # Persist the environment for the systemd units.
-agent.dump_env()

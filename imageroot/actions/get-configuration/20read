@@ -10,6 +10,7 @@ import sys
 import json
 
 import agent
+import modsecrets
 
 config = {}
 
@@ -31,6 +32,6 @@ config["agent_url"] = f"{base_url}/api/server.php" if base_url else ""
 # Initial admin credentials seeded on first start (valid until changed in the
 # Hashtopolis UI).
 config["admin_username"] = os.getenv("ADMIN_USER", "admin")
-config["admin_password"] = os.getenv("ADMIN_PASSWORD", "")
+config["admin_password"] = modsecrets.get("ADMIN_PASSWORD")
 
 json.dump(config, fp=sys.stdout)

@@ -36,7 +36,7 @@ if not http_port:
     sys.exit(1)
 if not env.get("HTTP_PORT"):
     agent.set_env("HTTP_PORT", http_port)
-    print(f"HTTP_PORT seeded with {http_port}")
+    print(f"HTTP_PORT seeded with {http_port}", file=sys.stderr)
 
 # Public base URL: PUBLIC_URL stays empty, which means "derive from the host name
 # and the Traefik settings of this node" (see configure-module).
@@ -76,7 +76,7 @@ if route and route.get("url") != new_url:
     route["instance"] = module_id
     route["url"] = new_url
     agent.set_route(route)
-    print(f"route {module_id} now points to {new_url}")
+    print(f"route {module_id} now points to {new_url}", file=sys.stderr)
 
 # Drop the per-path backend routes created by 1.0.x.
 for suffix in ("api", "binaries", "agents", "getfile", "gethashlist", "getfound"):
@@ -87,4 +87,4 @@ for suffix in ("api", "binaries", "agents", "getfile", "gethashlist", "getfound"
         data={"instance": instance},
     )
     if response["exit_code"] == 0:
-        print(f"removed obsolete route {instance}")
+        print(f"removed obsolete route {instance}", file=sys.stderr)

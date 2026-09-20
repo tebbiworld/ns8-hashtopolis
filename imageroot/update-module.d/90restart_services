@@ -19,4 +19,4 @@ set -e
 exec 1>&2
 
 systemctl --user daemon-reload
-systemctl --user restart hashtopolis.service
+systemctl --user try-restart hashtopolis.service hashtopolis-db.service hashtopolis-backend.service hashtopolis-frontend.service

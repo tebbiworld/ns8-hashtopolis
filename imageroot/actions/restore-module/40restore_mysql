@@ -1,0 +1,44 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Rebuild the MySQL data directory from the restored state/hashtopolis.sql: an
+# ephemeral MySQL container initialises a fresh database with the restored
+# passwords and loads the dump from its initdb hook.
+
+set -e -o pipefail
+exec 1>&2
+
+if [ ! -s hashtopolis.sql ]; then
+    echo "no hashtopolis.sql in the restored state: skipping database restore"
+    exit 0
+fi
+
+# Export only the database secrets. The file is not sourced: other values in
+# it may contain spaces or shell metacharacters.
+while IFS='=' read -r key value; do
+    case "${key}" in
+        MYSQL_PASSWORD|MYSQL_ROOT_PASSWORD) export "${key}=${value}" ;;
+    esac
+done < ./passwords.env
+
+podman volume rm -f hashtopolis-db >/dev/null 2>&1 || true
+rm -rf restore && mkdir -p restore
+cp hashtopolis.sql restore/10-hashtopolis.sql
+cat > restore/zz-stop.sh <<'EOS'
+docker_temp_server_stop
+exit 0
+EOS
+podman run --rm --network=none --replace --name hashtopolis-restore \
+    --volume ./restore:/docker-entrypoint-initdb.d:Z \
+    --volume hashtopolis-db:/var/lib/mysql:Z \
+    --env MYSQL_DATABASE=hashtopolis \
+    --env MYSQL_USER=hashtopolis \
+    --env MYSQL_PASSWORD \
+    --env MYSQL_ROOT_PASSWORD \
+    "${MYSQL_IMAGE}"
+rm -rf restore hashtopolis.sql
+echo "database restored from dump"

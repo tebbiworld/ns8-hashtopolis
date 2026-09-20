@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Runs before the backup (CWD = state/): dump the Hashtopolis database.
+
+set -e -o pipefail
+exec 1>&2
+
+podman exec hashtopolis-db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqldump --single-transaction --quick --routines --triggers --no-tablespaces -u root hashtopolis' > hashtopolis.sql.tmp
+mv hashtopolis.sql.tmp hashtopolis.sql
+echo "Hashtopolis database dumped to state/hashtopolis.sql ($(du -h hashtopolis.sql | cut -f1))"
