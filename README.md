@@ -39,6 +39,17 @@ terminates TLS while this node serves plain http.
 Agents are registered with `<base URL>/api/server.php`, the web interface uses
 `<base URL>/api/v2`.
 
+### Empty lists with "Invalid pagination cursor"
+
+The web UI stores the table position in the browser (localStorage key
+`ui-config`). A position saved by an older UI version is sent as
+`page[after]=0`. The backend rejects that with HTTP 400 "Invalid pagination
+cursor, cursor has to be base64 encoded", and Agents, Tasks, Hashlists and
+Binaries look empty although the data is there. The module's nginx drops this
+invalid cursor, so the first page is shown. With an older module version,
+delete `ui-config` for the Hashtopolis host in the browser's developer tools
+(Storage → Local Storage), or open the page in a private window.
+
 ## Install
 
 From the NethServer 8 cluster leader:
