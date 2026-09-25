@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1 — unreleased
+
+### Fixed
+
+- **Empty Agents, Tasks, Hashlists and Binaries pages with HTTP 400 "Invalid pagination cursor".** A table position that an older web UI stored in the browser is sent as `page[after]=0`, which the backend rejects. The data was never affected. The module's nginx now drops this cursor (a valid cursor is always base64, so `0` never is), and the first page is shown.
+
 ## 1.2.0 — 2026-09-19
 
 Alignment with the NethServer module conventions (NethServer/agents skills).
