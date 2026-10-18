@@ -5,6 +5,13 @@
 
 # MySQL database for Hashtopolis. Runs inside the hashtopolis pod so the backend
 # can reach it on 127.0.0.1:3306.
+# MySQL 8.4 LTS: the accounts were created with mysql_native_password (the
+# 8.0 option --default-authentication-plugin no longer exists); 8.4 keeps that
+# plugin only when --mysql-native-password=ON is given, and
+# --authentication-policy makes it the default for new accounts again, so a
+# new installation or a restore gets the same plugin as an updated one. On the first start
+# after the update from 8.0 MySQL upgrades the data directory in place, which
+# may take a minute (TimeoutStartSec).
 
 [Unit]
 Description=Hashtopolis database
@@ -18,7 +25,7 @@ EnvironmentFile=%S/state/environment
 EnvironmentFile=-%S/state/passwords.env
 WorkingDirectory=%S/state
 Restart=always
-TimeoutStartSec=120
+TimeoutStartSec=600
 TimeoutStopSec=70
 ExecStartPre=/bin/rm -f %t/hashtopolis-db.pid %t/hashtopolis-db.ctr-id
 ExecStart=/usr/bin/podman run \
@@ -37,7 +44,8 @@ ExecStart=/usr/bin/podman run \
     --health-timeout 5s \
     --health-retries 12 \
     ${MYSQL_IMAGE} \
-    --default-authentication-plugin=mysql_native_password \
+    --mysql-native-password=ON \
+    --authentication-policy=mysql_native_password \
     --character-set-server=utf8mb4 \
     --collation-server=utf8mb4_unicode_ci
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/hashtopolis-db.ctr-id -t 60
