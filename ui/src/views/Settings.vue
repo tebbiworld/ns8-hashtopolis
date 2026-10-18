@@ -62,6 +62,17 @@
               ref="public_url"
               class="public-url"
             ></cv-text-input>
+            <cv-text-area
+              :label="$t('settings.ip_allowlist')"
+              v-model="ip_allowlist"
+              :placeholder="$t('settings.ip_allowlist_placeholder')"
+              :helper-text="$t('settings.ip_allowlist_helper')"
+              :invalid-message="$t(error.ip_allowlist)"
+              :disabled="loading.getConfiguration || loading.configureModule"
+              ref="ip_allowlist"
+              rows="3"
+              class="public-url"
+            ></cv-text-area>
             <NsInlineNotification
               v-if="backend_url"
               kind="info"
@@ -80,11 +91,21 @@
               kind="info"
               :title="$t('settings.admin_credentials')"
               :description="
-                $t('settings.admin_credentials_desc', {
-                  user: admin_username,
-                  password: admin_password,
-                })
+                admin_password
+                  ? $t('settings.admin_credentials_desc', {
+                      user: admin_username,
+                      password: admin_password,
+                    })
+                  : $t('settings.admin_credentials_hidden', {
+                      user: admin_username,
+                    })
               "
+              :actionLabel="
+                admin_password || !admin_password_set
+                  ? ''
+                  : $t('settings.show_admin_password')
+              "
+              @action="getAdminPassword"
               :showCloseButton="false"
               class="info-tile"
             />
@@ -149,6 +170,8 @@ export default {
       agent_url: "",
       admin_username: "",
       admin_password: "",
+      admin_password_set: false,
+      ip_allowlist: "",
       loading: {
         getConfiguration: false,
         configureModule: false,
@@ -158,6 +181,7 @@ export default {
         configureModule: "",
         host: "",
         public_url: "",
+        ip_allowlist: "",
       },
     };
   },
@@ -224,8 +248,36 @@ export default {
       this.backend_url = config.backend_url || "";
       this.agent_url = config.agent_url || "";
       this.admin_username = config.admin_username || "";
-      this.admin_password = config.admin_password || "";
+      this.admin_password = "";
+      this.admin_password_set = !!config.admin_password_set;
+      this.ip_allowlist = (config.ip_allowlist || []).join("\n");
       this.focusElement("host");
+    },
+    allowlistItems() {
+      return this.ip_allowlist
+        .split(/[\s,]+/)
+        .map((x) => x.trim())
+        .filter((x) => x);
+    },
+    async getAdminPassword() {
+      const taskAction = "get-admin-password";
+      const eventId = this.getUuid();
+      this.core.$root.$once(
+        `${taskAction}-completed-${eventId}`,
+        (taskContext, taskResult) => {
+          this.admin_password = taskResult.output.admin_password || "";
+        }
+      );
+      await to(
+        this.createModuleTaskForApp(this.instanceName, {
+          action: taskAction,
+          extra: {
+            title: this.$t("settings.show_admin_password"),
+            isNotificationHidden: true,
+            eventId,
+          },
+        })
+      );
     },
     validateConfigureModule() {
       this.clearErrors(this);
@@ -280,6 +332,7 @@ export default {
             lets_encrypt: this.lets_encrypt,
             http2https: this.http2https,
             public_url: this.public_url,
+            ip_allowlist: this.allowlistItems(),
           },
           extra: {
             title: this.$t("settings.configure_instance", {

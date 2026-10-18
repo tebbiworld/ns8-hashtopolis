@@ -19,5 +19,6 @@
     "code_url": "https://github.com/tebbiworld/ns8-hashtopolis",
     "relnotes_url": "https://github.com/tebbiworld/ns8-hashtopolis/releases"
   },
-  "source": "ghcr.io/tebbiworld/hashtopolis"
+  "source": "ghcr.io/tebbiworld/hashtopolis",
+  "terms_url": "https://github.com/tebbiworld/ns8-hashtopolis#authorized-use-only"
 }

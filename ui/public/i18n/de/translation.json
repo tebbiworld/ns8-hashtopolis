@@ -39,7 +39,13 @@
         "agent_url_desc": "Agenten werden mit {agent} registriert — die Weboberfläche nutzt die v2-REST-API unter {api}.",
         "admin_credentials": "Initiales Administrator-Login",
         "admin_credentials_desc": "Benutzer \"{user}\" mit Passwort \"{password}\". Direkt nach dem ersten Login ändern.",
-        "domain_already_used_in_traefik": "Dieser Hostname wird bereits von einer anderen Instanz verwendet."
+        "domain_already_used_in_traefik": "Dieser Hostname wird bereits von einer anderen Instanz verwendet.",
+        "ip_allowlist": "Erlaubte Client-Netze (optional)",
+        "ip_allowlist_placeholder": "172.17.0.0/24\n10.5.4.0/24",
+        "ip_allowlist_helper": "Ein CIDR-Netz pro Zeile; leer erlaubt alle. Gilt für Traefik dieses Knotens. Veröffentlicht ein anderer Knoten den Hostnamen (z. B. der Knoten, der den Internetverkehr annimmt), muss auch dessen Route beschränkt werden.",
+        "admin_credentials_hidden": "Benutzer \"{user}\". Das Startpasswort gilt, bis es in Hashtopolis geändert wird.",
+        "show_admin_password": "Startpasswort anzeigen",
+        "invalid_cidr": "Ungültiges Netz (CIDR)"
     },
     "about": {
         "title": "Über"
