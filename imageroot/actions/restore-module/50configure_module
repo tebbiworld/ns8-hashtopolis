@@ -30,6 +30,7 @@ data = {
     "http2https": flag("TRAEFIK_HTTP2HTTPS", "True"),
     "lets_encrypt": flag("TRAEFIK_LETS_ENCRYPT", "False"),
     "public_url": env.get("PUBLIC_URL", ""),
+    "ip_allowlist": [c for c in env.get("IP_ALLOWLIST", "").split(",") if c],
 }
 if "TRAEFIK_LETS_ENCRYPT" not in env:
     # A backup taken with a module version that did not record the setting: say
