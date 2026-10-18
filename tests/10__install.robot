@@ -34,23 +34,43 @@ Update to the image under test
     Skip If    '${SCENARIO}' != 'update'    scenario is ${SCENARIO}
     Run on node    api-cli run update-module --data '{"force":true,"module_url":"${IMAGE_URL}","instances":["${module_id}"]}'
     Wait Until Keyword Succeeds    60 times    10 seconds    Frontend and API are served
-    ${cfg} =    Run task    module/${module_id}/get-configuration    {}
     # the migration must move the secrets, not regenerate them
-    Should Be Equal    ${cfg['admin_password']}    ${ADMIN_PW_BEFORE}
+    ${pw} =    Run task    module/${module_id}/get-admin-password    {}
+    Should Be Equal    ${pw['admin_password']}    ${ADMIN_PW_BEFORE}
 
 Configuration reads back
     ${cfg} =    Run task    module/${module_id}/get-configuration    {}
     Should Be Equal    ${cfg['host']}    hashtopolis.ci.test
     Should Be True    ${cfg['http2https']}
-    Should Not Be Empty    ${cfg['admin_password']}
+    Should Be True    ${cfg['admin_password_set']}
+    Should Be True    'admin_password' not in $cfg
 
 The admin can log in with the stored password
-    ${cfg} =    Run task    module/${module_id}/get-configuration    {}
-    ${out} =    Run on node    curl -sSk -o /dev/null -w '\%{http_code}' -u 'admin:${cfg['admin_password']}' -X POST -H 'Host: hashtopolis.ci.test' https://127.0.0.1/api/v2/auth/token
+    # also proves that the database accounts work after the MySQL 8.4 upgrade
+    ${pw} =    Run task    module/${module_id}/get-admin-password    {}
+    ${out} =    Run on node    curl -sSk -o /dev/null -w '\%{http_code}' -u 'admin:${pw['admin_password']}' -X POST -H 'Host: hashtopolis.ci.test' https://127.0.0.1/api/v2/auth/token
     Should Match Regexp    ${out.strip()}    ^20[01]$
 
 Secrets are stored in passwords.env only
     Secrets are kept out of the module environment    ${module_id}
+
+The database runs MySQL 8.4
+    ${v} =    Run on node    runagent -m ${module_id} podman exec hashtopolis-db mysqld --version
+    Should Contain    ${v}    Ver 8.4.
+
+The mail relay file is written for ssmtp
+    ${out} =    Run on node    runagent -m ${module_id} podman exec hashtopolis-backend sh -c 'test -r /etc/ssmtp/ssmtp.conf && ls -ln /etc/ssmtp/ssmtp.conf'
+    Should Contain    ${out}    -rw-r-----
+
+The allow-list restricts the route
+    Run task    module/${module_id}/configure-module    {"host":"hashtopolis.ci.test","lets_encrypt":false,"http2https":true,"public_url":"","ip_allowlist":["192.0.2.0/24"]}    decode_json=${FALSE}
+    ${code} =    Run on node    curl -sSk -o /dev/null -w '\%{http_code}' -H 'Host: hashtopolis.ci.test' https://127.0.0.1/
+    Should Be Equal As Strings    ${code.strip()}    403
+    Run task    module/${module_id}/configure-module    ${CONFIG}    decode_json=${FALSE}
+    ${cfg} =    Run task    module/${module_id}/get-configuration    {}
+    Should Be Equal As Integers    ${{ len($cfg['ip_allowlist']) }}    1
+    Run task    module/${module_id}/configure-module    {"host":"hashtopolis.ci.test","lets_encrypt":false,"http2https":true,"public_url":"","ip_allowlist":[]}    decode_json=${FALSE}
+    Wait Until Keyword Succeeds    30 times    10 seconds    Frontend and API are served
 
 *** Keywords ***
 Frontend and API are served
