@@ -22,6 +22,8 @@ Restart=always
 TimeoutStartSec=300
 TimeoutStopSec=70
 ExecStartPre=/bin/rm -f %t/hashtopolis-backend.pid %t/hashtopolis-backend.ctr-id
+# mail relay for PHP mail() (ssmtp) from the cluster smarthost
+ExecStartPre=/usr/local/bin/runagent discover-smarthost
 # Wait for MySQL to pass its health check before starting the backend, which
 # runs database migrations on first boot.
 ExecStartPre=/bin/bash -c 'for i in $(seq 1 120); do [ "$(/usr/bin/podman inspect -f "{{.State.Health.Status}}" hashtopolis-db 2>/dev/null)" = "healthy" ] && exit 0; sleep 2; done; echo "timeout waiting for hashtopolis-db" >&2; exit 1'
@@ -32,6 +34,7 @@ ExecStart=/usr/bin/podman run \
     --pod-id-file %t/hashtopolis.pod-id \
     --replace -d --name hashtopolis-backend \
     --volume hashtopolis-data:/usr/local/share/hashtopolis:Z \
+    --volume %S/state/ssmtp/ssmtp.conf:/etc/ssmtp/ssmtp.conf:ro,Z \
     --env HASHTOPOLIS_DB_USER=hashtopolis \
     --env HASHTOPOLIS_DB_PASS \
     --env HASHTOPOLIS_DB_HOST=127.0.0.1 \
