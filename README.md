@@ -10,7 +10,7 @@ The module runs three rootless containers:
   server and agent endpoints)
 - **hashtopolis-frontend** — the official `hashtopolis/frontend` image (Angular
   web UI)
-- **hashtopolis-db** — a dedicated `mysql:8.0` database, data kept in the
+- **hashtopolis-db** — a dedicated `mysql:8.4` (LTS) database, data kept in the
   `hashtopolis-db` named volume
 
 All three containers share one pod, so they reach each other over the pod's
@@ -50,6 +50,14 @@ invalid cursor, so the first page is shown. With an older module version,
 delete `ui-config` for the Hashtopolis host in the browser's developer tools
 (Storage → Local Storage), or open the page in a private window.
 
+## Authorized use only
+
+Hashtopolis recovers passwords from hashes. Use it only on hashes you are
+authorized to test - your own systems, or a written order of their owner - and
+keep hash lists and results confidential: they end up in the module backup
+(database dump and the `hashtopolis-data` volume). The Software Center shows
+this section before the installation.
+
 ## Install
 
 From the NethServer 8 cluster leader:
@@ -68,15 +76,63 @@ api-cli run module/hashtopolis1/configure-module --data '{
 }'
 ```
 
-Read back the configuration, including the generated initial admin password and
-the agent URL:
+Read back the configuration (including the agent URL) and, once, the generated
+initial admin password:
 
 ```bash
 api-cli run module/hashtopolis1/get-configuration --data '{}'
+api-cli run module/hashtopolis1/get-admin-password --data '{}'
 ```
 
-Log in at `https://hashtopolis.example.org` with user `admin` and the returned
-password, then change it immediately.
+Log in at `https://hashtopolis.example.org` with user `admin` and that
+password, then change it immediately. The settings page shows the password only
+on request; `get-configuration` never returns it.
+
+### Restricting access
+
+`ip_allowlist` (CIDR list, empty = everybody) limits the route of this node's
+Traefik, e.g. to the LAN and the cluster VPN:
+
+```bash
+api-cli run module/hashtopolis1/configure-module --data '{"host": "hashtopolis.example.org", "ip_allowlist": ["192.168.1.0/24", "10.5.4.0/24"]}'
+```
+
+If another node publishes the host name - for example the node that receives
+the Internet traffic forwards it to this node over the cluster VPN - every
+request arrives here from that node's VPN address, so restrict the route on
+that node as well.
+
+## Agents
+
+The agents (hashcat workers) run on machines with a GPU, outside NS8:
+
+1. In the web UI create a voucher (*Agents → New agent*).
+2. On the agent machine get the Python agent from the server
+   (*Agents → New agent → Download agent*, `hashtopolis.zip`) and register it:
+   `python3 hashtopolis.zip --url <agent URL> --voucher <voucher>`. The agent
+   URL is shown on the settings page (`https://<host>/api/server.php`); with
+   `public_url` set it is built from that address.
+3. The agent needs to trust the certificate of the host name (Let's Encrypt,
+   or the CA of an internal certificate) and to reach it on port 443. After the
+   registration it appears under *Agents*; assign it to tasks there.
+4. The agent downloads hashcat and the task files from the server and runs
+   them: treat the Hashtopolis admin account as access to every agent machine.
+
+## Mail
+
+Hashtopolis sends e-mail notifications and password-reset mails with PHP
+`mail()`. The module points the image's `ssmtp` at the cluster smarthost
+(`state/ssmtp/ssmtp.conf`, written before every start and after a change of
+the smarthost). Without a smarthost Hashtopolis cannot send mail. ssmtp cannot
+read a relay password that contains `#`.
+
+## Database
+
+MySQL 8.4 LTS (since 1.3.0; 8.0 reached its end of life in April 2026). The
+update from an earlier release upgrades the 8.0 data directory in place on the
+first start, which can take a minute. The accounts keep `mysql_native_password`
+(`--mysql-native-password=ON`, `--authentication-policy`); MySQL 9 will remove
+it. The automatic release follows 8.4 patch releases only.
 
 ## Build
 

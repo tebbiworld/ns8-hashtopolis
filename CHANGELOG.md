@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- **MySQL 8.4 LTS** instead of 8.0, which reached its end of life in April 2026. The update upgrades the data directory in place on the first start; the accounts keep their authentication plugin. The automatic release now also follows MySQL 8.4 patch releases (never a new major version).
+
+### Added
+
+- **Mail through the cluster smarthost.** E-mail notifications and password-reset mails (PHP `mail()` with the image's ssmtp) had no relay and were lost; the module now writes the ssmtp configuration from the cluster smarthost and follows its changes.
+- **Allowed client networks** (`ip_allowlist`) for the route of this node.
+- README: authorized use (shown before the installation, `terms_url`), connecting agents, mail, database.
+
+### Security
+
+- **The initial admin password is no longer part of `get-configuration`** (task results are kept in Redis). The settings page shows it only on request (new action `get-admin-password`).
+
 ## 1.2.2 — 2026-10-18
 
 ### Fixed
