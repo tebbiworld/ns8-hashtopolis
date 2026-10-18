@@ -59,8 +59,11 @@ The database runs MySQL 8.4
     Should Contain    ${v}    Ver 8.4.
 
 The mail relay file is written for ssmtp
-    ${out} =    Run on node    runagent -m ${module_id} podman exec hashtopolis-backend sh -c 'test -r /etc/ssmtp/ssmtp.conf && ls -ln /etc/ssmtp/ssmtp.conf'
-    Should Contain    ${out}    -rw-r-----
+    # root:mail 0640: only the setgid ssmtp reads it, PHP (www-data) cannot
+    ${out} =    Run on node    runagent -m ${module_id} podman exec --user root hashtopolis-backend ls -ln /etc/ssmtp/ssmtp.conf
+    Should Match Regexp    ${out}    ^-rw-r-----\\S* 1 0 8
+    ${denied} =    Run on node    runagent -m ${module_id} podman exec hashtopolis-backend sh -c 'test -r /etc/ssmtp/ssmtp.conf && echo readable || echo denied'
+    Should Be Equal As Strings    ${denied.strip()}    denied
 
 The allow-list restricts the route
     Run task    module/${module_id}/configure-module    {"host":"hashtopolis.ci.test","lets_encrypt":false,"http2https":true,"public_url":"","ip_allowlist":["192.0.2.0/24"]}    decode_json=${FALSE}
