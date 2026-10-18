@@ -20,7 +20,7 @@ The restored instance has data, settings and secrets
     ${out} =    Wait Until Keyword Succeeds    40 times    10 seconds
     ...    Run on node    runagent -m ${restored_id} podman exec hashtopolis-db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -u root -N hashtopolis -e "SELECT note FROM ci_probe"'
     Should Contain    ${out}    pre-backup
-    ${orig} =    Run task    module/${module_id}/get-configuration    {}
-    ${cfg} =    Run task    module/${restored_id}/get-configuration    {}
+    ${orig} =    Run task    module/${module_id}/get-admin-password    {}
+    ${cfg} =    Run task    module/${restored_id}/get-admin-password    {}
     Should Be Equal    ${cfg['admin_password']}    ${orig['admin_password']}
     Secrets are kept out of the module environment    ${restored_id}

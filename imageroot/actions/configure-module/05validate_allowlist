@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 tebbi
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# The allowed client networks must be valid CIDR networks.
+
+import ipaddress
+import json
+import os
+import sys
+
+import agent
+
+agent.set_weight(os.path.basename(__file__), 0)
+
+data = json.load(sys.stdin)
+errors = []
+for cidr in data.get("ip_allowlist") or []:
+    try:
+        ipaddress.ip_network(cidr.strip(), strict=False)
+    except ValueError:
+        errors.append({"field": "ip_allowlist", "parameter": "ip_allowlist", "value": cidr, "error": "invalid_cidr"})
+if errors:
+    agent.set_status("validation-failed")
+    json.dump(errors, fp=sys.stdout)
+    sys.exit(2)

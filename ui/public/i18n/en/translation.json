@@ -39,7 +39,13 @@
         "agent_url_desc": "Agents register with {agent} — the web interface uses the v2 REST API at {api}.",
         "admin_credentials": "Initial administrator login",
         "admin_credentials_desc": "User \"{user}\" with password \"{password}\". Change it right after the first login.",
-        "domain_already_used_in_traefik": "This host name is already used by another instance."
+        "domain_already_used_in_traefik": "This host name is already used by another instance.",
+        "ip_allowlist": "Allowed client networks (optional)",
+        "ip_allowlist_placeholder": "172.17.0.0/24\n10.5.4.0/24",
+        "ip_allowlist_helper": "One CIDR network per line; empty allows everybody. Applies to this node's Traefik. If another node publishes the host name (e.g. the node that receives Internet traffic), restrict its route there, too.",
+        "admin_credentials_hidden": "User \"{user}\". The initial password is valid until it is changed in Hashtopolis.",
+        "show_admin_password": "Show initial password",
+        "invalid_cidr": "Invalid network (CIDR)"
     },
     "about": {
         "title": "About"

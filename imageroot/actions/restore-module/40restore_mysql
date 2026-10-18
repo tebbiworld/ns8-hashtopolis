@@ -39,6 +39,8 @@ podman run --rm --network=none --replace --name hashtopolis-restore \
     --env MYSQL_USER=hashtopolis \
     --env MYSQL_PASSWORD \
     --env MYSQL_ROOT_PASSWORD \
-    "${MYSQL_IMAGE}"
+    "${MYSQL_IMAGE}" \
+    --mysql-native-password=ON \
+    --authentication-policy=mysql_native_password
 rm -rf restore hashtopolis.sql
 echo "database restored from dump"

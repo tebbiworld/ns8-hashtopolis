@@ -37,6 +37,17 @@
             "title": "Public URL",
             "description": "Base URL under which this instance is reachable from agents and browsers, like 'https://hashtopolis.example.org'. Leave empty to derive it from the host name and the Traefik settings of this node. Set it when the instance is published through a gateway node that terminates TLS while this node serves plain http.",
             "pattern": "^$|^https?://[A-Za-z0-9._-]+(:[0-9]{1,5})?$"
+        },
+        "ip_allowlist": {
+            "type": "array",
+            "title": "Allowed client networks",
+            "description": "CIDR networks allowed to reach the web UI and the agent API through this node's Traefik; empty allows all. A route on another node (e.g. the Internet entry node) needs its own allow-list.",
+            "items": {
+                "type": "string",
+                "maxLength": 43
+            },
+            "maxItems": 64,
+            "default": []
         }
     }
 }

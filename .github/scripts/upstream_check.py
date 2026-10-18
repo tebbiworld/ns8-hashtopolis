@@ -10,6 +10,10 @@ Environment:
                    compared with the current digest of its `latest` tag
                    (for upstreams that do not tag releases)
   PIN_FILES        files holding the pinned references (default build-images.sh)
+  EXTRA_IMAGE      optional: one more image pinned by version tag (e.g. the
+                   database); it is bumped to the newest tag matching
+                   EXTRA_TAG_REGEX (named group `ver`), which keeps it on
+                   one release line (e.g. MySQL 8.4 LTS patches only)
 Writes current / newest / newer to $GITHUB_OUTPUT and the sed commands that
 perform the bump to .upstream_bump.sh.
 """
@@ -59,6 +63,21 @@ else:
     newer = regex.match(current_tag) is not None and numeric(newest_tag) > numeric(current_tag)
     current, newest = current_tag, newest_tag
     bumps = [(img, ":" + current_tag, ":" + newest_tag, "") for img in images]
+
+extra = os.environ.get("EXTRA_IMAGE", "")
+if extra:
+    xregex = re.compile(os.environ["EXTRA_TAG_REGEX"])
+    xnum = lambda tag: [int(x) for x in re.findall(r"\d+", xregex.match(tag).group("ver"))]
+    xtags = [t for t in skopeo("list-tags", f"docker://{extra}")["Tags"] if xregex.match(t)]
+    xcur = pinned(extra).lstrip(":")
+    if xtags and xregex.match(xcur):
+        xnew = max(xtags, key=xnum)
+        if xnum(xnew) > xnum(xcur):
+            bumps.append((extra, ":" + xcur, ":" + xnew, ""))
+            newer = True
+            newest = f"{newest}, {extra.rsplit('/', 1)[-1]} {xnew}"
+    else:
+        print("no matching tag for", extra, file=sys.stderr)
 
 with open(".upstream_bump.sh", "w") as fp:
     fp.write("set -e\n")

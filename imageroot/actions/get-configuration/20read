@@ -30,8 +30,13 @@ base_url = os.getenv("BASE_URL", "")
 config["agent_url"] = f"{base_url}/api/server.php" if base_url else ""
 
 # Initial admin credentials seeded on first start (valid until changed in the
-# Hashtopolis UI).
+# Hashtopolis UI). The password is never part of the configuration (task
+# results are kept in Redis): the action get-admin-password returns it on
+# explicit request.
 config["admin_username"] = os.getenv("ADMIN_USER", "admin")
-config["admin_password"] = modsecrets.get("ADMIN_PASSWORD")
+config["admin_password_set"] = bool(modsecrets.get("ADMIN_PASSWORD"))
+
+# Client networks allowed to reach the route (empty = everybody)
+config["ip_allowlist"] = [c for c in os.getenv("IP_ALLOWLIST", "").split(",") if c]
 
 json.dump(config, fp=sys.stdout)

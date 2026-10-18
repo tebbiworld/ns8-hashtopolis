@@ -38,5 +38,13 @@ route = {
 }
 if "lets_encrypt" in data:
     route["lets_encrypt"] = data["lets_encrypt"]
+# Always pass the allow-list: an empty list removes a previous one, while a
+# request without the key keeps the stored networks.
+if "ip_allowlist" in data:
+    allow = [c.strip() for c in data.get("ip_allowlist") or [] if c.strip()]
+    agent.set_env("IP_ALLOWLIST", ",".join(allow))
+else:
+    allow = [c for c in os.environ.get("IP_ALLOWLIST", "").split(",") if c]
+route["ip_allowlist"] = allow
 
 agent.set_route(route)

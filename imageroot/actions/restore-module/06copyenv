@@ -26,7 +26,7 @@ else:
     # environment in state/environment.clone-module until its last step.
     env = agent.read_envfile("environment.clone-module")
 
-KEEP = ["TRAEFIK_HOST", "TRAEFIK_HTTP2HTTPS", "TRAEFIK_LETS_ENCRYPT", "PUBLIC_URL", "ADMIN_USER"]
+KEEP = ["TRAEFIK_HOST", "TRAEFIK_HTTP2HTTPS", "TRAEFIK_LETS_ENCRYPT", "PUBLIC_URL", "ADMIN_USER", "IP_ALLOWLIST"]
 SECRETS = ["MYSQL_ROOT_PASSWORD", "MYSQL_PASSWORD", "ADMIN_PASSWORD"]
 
 agent.mset_env({k: env[k] for k in KEEP if k in env})

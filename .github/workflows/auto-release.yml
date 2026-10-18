@@ -27,6 +27,9 @@ permissions:
 env:
   UPSTREAM_IMAGES: "docker.io/hashtopolis/backend docker.io/hashtopolis/frontend"
   TAG_REGEX: ''
+  # the database follows MySQL 8.4 LTS patch releases
+  EXTRA_IMAGE: "docker.io/library/mysql"
+  EXTRA_TAG_REGEX: '^(?P<ver>8\.4\.\d+)$'
   UPSTREAM_NAME: "Hashtopolis"
   PIN_FILES: "build-images.sh"
   MIN_DAYS: "42"
