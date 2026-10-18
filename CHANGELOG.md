@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2 — 2026-10-18
+
+### Fixed
+
+- **Module logo in the Software Center.** The UI shipped no `logo.png`, so installed instances showed the NS8 default logo; it now carries the official Hashtopolis logo (as in the catalog).
+
 ## 1.2.1 — 2026-09-25
 
 ### Fixed
