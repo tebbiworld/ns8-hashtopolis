@@ -65,6 +65,11 @@ The mail relay file is written for ssmtp
     ${denied} =    Run on node    runagent -m ${module_id} podman exec hashtopolis-backend sh -c 'test -r /etc/ssmtp/ssmtp.conf && echo readable || echo denied'
     Should Be Equal As Strings    ${denied.strip()}    denied
 
+The backend runs a fixed PHP release
+    # CVE-2026-109618/109619 are fixed in PHP 8.5.12
+    ${out} =    Run on node    runagent -m ${module_id} podman exec hashtopolis-backend php -r 'echo version_compare(PHP_VERSION, "8.5.12", ">=") ? "ok" : PHP_VERSION;'
+    Should Be Equal As Strings    ${out.strip()}    ok
+
 The PHP hardening settings are active
     # CVE-2026-109619 configuration mitigation, mounted from imageroot/php
     ${out} =    Run on node    runagent -m ${module_id} podman exec hashtopolis-backend php -r 'echo ini_get("session.upload_progress.enabled"), ini_get("fatal_error_backtraces");'

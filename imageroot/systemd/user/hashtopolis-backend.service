@@ -43,7 +43,7 @@ ExecStart=/usr/bin/podman run \
     --env HASHTOPOLIS_ADMIN_USER=${ADMIN_USER} \
     --env HASHTOPOLIS_ADMIN_PASSWORD \
     --env HASHTOPOLIS_APIV2_ENABLE=1 \
-    ${BACKEND_IMAGE}
+    ${HASHTOPOLIS_BACKEND_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/hashtopolis-backend.ctr-id -t 30
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/hashtopolis-backend.ctr-id
 PIDFile=%t/hashtopolis-backend.pid
