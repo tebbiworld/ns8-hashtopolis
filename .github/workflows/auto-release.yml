@@ -25,11 +25,14 @@ permissions:
   contents: write
 
 env:
-  UPSTREAM_IMAGES: "docker.io/hashtopolis/backend docker.io/hashtopolis/frontend"
-  TAG_REGEX: ''
-  # the database follows MySQL 8.4 LTS patch releases
-  EXTRA_IMAGE: "docker.io/library/mysql"
-  EXTRA_TAG_REGEX: '^(?P<ver>8\.4\.\d+)$'
+  # Hashtopolis release tags of the frontend image; the backend is built by
+  # build-images.sh from the upstream source of the same tag
+  UPSTREAM_IMAGES: "docker.io/hashtopolis/frontend"
+  TAG_REGEX: '^v(?P<ver>\d+\.\d+\.\d+)$'
+  # the database follows MySQL 8.4 LTS patch releases, the backend base image
+  # PHP 8.5 patch releases (space separated, one regex per image)
+  EXTRA_IMAGE: "docker.io/library/mysql docker.io/library/php"
+  EXTRA_TAG_REGEX: '^(?P<ver>8\.4\.\d+)$ ^(?P<ver>8\.5\.\d+)-apache$'
   UPSTREAM_NAME: "Hashtopolis"
   PIN_FILES: "build-images.sh"
   MIN_DAYS: "42"
@@ -102,6 +105,7 @@ jobs:
 
       - name: Build module image
         if: steps.decide.outputs.go == 'true'
+        id: build
         run: IMAGETAG="${{ steps.bump.outputs.version }}" APPTAG="${{ steps.bump.outputs.version }}" bash ./build-images.sh
 
       - name: Publish image(s)
@@ -116,6 +120,10 @@ jobs:
             src="$img"; buildah inspect "$img:$ver" >/dev/null 2>&1 && src="$img:$ver"
             buildah push "$src" "docker://$img:$ver"
             buildah push "$src" "docker://$img:latest"
+          done
+          # runtime images built by build-images.sh keep exactly their pinned tag
+          for img in ${{ steps.build.outputs.runtime_images }}; do
+            buildah push "$img" "docker://$img"
           done
 
       - name: GitHub release
