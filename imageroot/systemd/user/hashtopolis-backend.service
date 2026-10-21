@@ -35,6 +35,7 @@ ExecStart=/usr/bin/podman run \
     --replace -d --name hashtopolis-backend \
     --volume hashtopolis-data:/usr/local/share/hashtopolis:Z \
     --volume %S/state/ssmtp/ssmtp.conf:/etc/ssmtp/ssmtp.conf:ro,Z \
+    --volume %S/php/zz-ns8-hardening.ini:/usr/local/etc/php/conf.d/zz-ns8-hardening.ini:ro,Z \
     --env HASHTOPOLIS_DB_USER=hashtopolis \
     --env HASHTOPOLIS_DB_PASS \
     --env HASHTOPOLIS_DB_HOST=127.0.0.1 \

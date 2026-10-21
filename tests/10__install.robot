@@ -65,6 +65,11 @@ The mail relay file is written for ssmtp
     ${denied} =    Run on node    runagent -m ${module_id} podman exec hashtopolis-backend sh -c 'test -r /etc/ssmtp/ssmtp.conf && echo readable || echo denied'
     Should Be Equal As Strings    ${denied.strip()}    denied
 
+The PHP hardening settings are active
+    # CVE-2026-109619 configuration mitigation, mounted from imageroot/php
+    ${out} =    Run on node    runagent -m ${module_id} podman exec hashtopolis-backend php -r 'echo ini_get("session.upload_progress.enabled"), ini_get("fatal_error_backtraces");'
+    Should Be Equal As Strings    ${out.strip()}    00
+
 The allow-list restricts the route
     Run task    module/${module_id}/configure-module    {"host":"hashtopolis.ci.test","lets_encrypt":false,"http2https":true,"public_url":"","ip_allowlist":["192.0.2.0/24"]}    decode_json=${FALSE}
     ${code} =    Run on node    curl -sSk -o /dev/null -w '\%{http_code}' -H 'Host: hashtopolis.ci.test' https://127.0.0.1/
