@@ -6,8 +6,9 @@ hashcat used for authorized password recovery and security testing.
 
 The module runs three rootless containers:
 
-- **hashtopolis-backend** — the official `hashtopolis/backend` image (PHP API
-  server and agent endpoints)
+- **hashtopolis-backend** — the Hashtopolis backend (PHP API server and agent
+  endpoints), built by this repository from the upstream Dockerfile of the
+  pinned Hashtopolis release on a pinned PHP release, see [Backend image](#backend-image)
 - **hashtopolis-frontend** — the official `hashtopolis/frontend` image (Angular
   web UI)
 - **hashtopolis-db** — a dedicated `mysql:8.4` (LTS) database, data kept in the
@@ -134,12 +135,40 @@ first start, which can take a minute. The accounts keep `mysql_native_password`
 (`--mysql-native-password=ON`, `--authentication-policy`); MySQL 9 will remove
 it. The automatic release follows 8.4 patch releases only.
 
+## Backend image
+
+The published `hashtopolis/backend` images are only rebuilt for a Hashtopolis
+release, so their PHP falls behind: v1.0.1 runs PHP 8.5.10, which is affected
+by CVE-2026-109618 and CVE-2026-109619 (remote code execution, fixed in PHP
+8.5.12). `build-images.sh` therefore builds the backend itself:
+
+- source: the upstream repository at the tag of the pinned frontend image
+  (`frontend_image`), so frontend and backend are always the same release
+- base: the pinned `php_image` instead of the floating `php:8.5-apache` of the
+  upstream Dockerfile; the build stops when upstream has moved to another PHP
+  minor release, and when the built image does not run the pinned PHP version
+- image: `ghcr.io/tebbiworld/hashtopolis-backend:<release>-php<version>`, e.g.
+  `1.0.1-php8.5.12`. A published tag is never rebuilt; a new PHP or Hashtopolis
+  release gives a new tag. The node exposes it as `${HASHTOPOLIS_BACKEND_IMAGE}`.
+
+The automatic release follows Hashtopolis release tags (`vX.Y.Z`) and PHP 8.5
+patch releases. In addition, `imageroot/php/zz-ns8-hardening.ini` turns off
+`session.upload_progress.enabled` and `fatal_error_backtraces`, which
+Hashtopolis does not use (configuration mitigation named by the CVE-2026-109619
+advisory).
+
 ## Build
 
 ```bash
 bash build-images.sh
+# the backend image is only built when its tag is not published yet;
+# the script prints the push commands
+buildah push ghcr.io/tebbiworld/hashtopolis-backend:1.0.1-php8.5.12
 buildah push ghcr.io/tebbiworld/hashtopolis:latest
 ```
+
+`BUILD_BACKEND=1` forces the backend build. `PHP_IMAGE=<image>` replaces the
+base for a local test only (the PHP version check still applies).
 
 ## Uninstall
 

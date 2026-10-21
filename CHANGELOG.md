@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Security
+
+- **PHP 8.5.12 in the backend** (CVE-2026-109618, CVE-2026-109619: unauthenticated remote code execution in PHP, CVSS 9.2). The official `hashtopolis/backend` v1.0.1 image runs PHP 8.5.10 and has not been rebuilt. The module now builds the backend from the upstream Dockerfile of Hashtopolis v1.0.1 on `php:8.5.12-apache` and publishes it as `ghcr.io/tebbiworld/hashtopolis-backend:1.0.1-php8.5.12`. Data, database and settings are unchanged.
+- PHP hardening settings for the backend: `session.upload_progress.enabled` and `fatal_error_backtraces` are off (configuration mitigation named by the CVE-2026-109619 advisory; Hashtopolis uses neither).
+
+### Changed
+
+- The frontend is pinned by release tag (`v1.0.1`, same image as before) instead of digest; the automatic release follows Hashtopolis release tags and PHP 8.5 patch releases.
+
 ## 1.3.0 — 2026-10-18
 
 ### Changed
