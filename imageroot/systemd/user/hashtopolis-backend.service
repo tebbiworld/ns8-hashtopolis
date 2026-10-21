@@ -35,6 +35,7 @@ ExecStart=/usr/bin/podman run \
     --replace -d --name hashtopolis-backend \
     --volume hashtopolis-data:/usr/local/share/hashtopolis:Z \
     --volume %S/state/ssmtp/ssmtp.conf:/etc/ssmtp/ssmtp.conf:ro,Z \
+    --volume %S/php/zz-ns8-hardening.ini:/usr/local/etc/php/conf.d/zz-ns8-hardening.ini:ro,Z \
     --env HASHTOPOLIS_DB_USER=hashtopolis \
     --env HASHTOPOLIS_DB_PASS \
     --env HASHTOPOLIS_DB_HOST=127.0.0.1 \
@@ -42,7 +43,7 @@ ExecStart=/usr/bin/podman run \
     --env HASHTOPOLIS_ADMIN_USER=${ADMIN_USER} \
     --env HASHTOPOLIS_ADMIN_PASSWORD \
     --env HASHTOPOLIS_APIV2_ENABLE=1 \
-    ${BACKEND_IMAGE}
+    ${HASHTOPOLIS_BACKEND_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/hashtopolis-backend.ctr-id -t 30
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/hashtopolis-backend.ctr-id
 PIDFile=%t/hashtopolis-backend.pid

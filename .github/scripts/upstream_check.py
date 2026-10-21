@@ -10,10 +10,13 @@ Environment:
                    compared with the current digest of its `latest` tag
                    (for upstreams that do not tag releases)
   PIN_FILES        files holding the pinned references (default build-images.sh)
-  EXTRA_IMAGE      optional: one more image pinned by version tag (e.g. the
-                   database); it is bumped to the newest tag matching
-                   EXTRA_TAG_REGEX (named group `ver`), which keeps it on
-                   one release line (e.g. MySQL 8.4 LTS patches only)
+  EXTRA_IMAGE      optional: more images pinned by version tag (e.g. the
+                   database), space separated; each is bumped to the newest
+                   tag matching its EXTRA_TAG_REGEX (same position in that
+                   space separated list, named group `ver`), which keeps it on
+                   one release line (e.g. MySQL 8.4 LTS patches only). A tag
+                   whose image cannot be inspected yet (a release still being
+                   built) is left for the next run.
 Writes current / newest / newer to $GITHUB_OUTPUT and the sed commands that
 perform the bump to .upstream_bump.sh.
 """
@@ -64,15 +67,21 @@ else:
     current, newest = current_tag, newest_tag
     bumps = [(img, ":" + current_tag, ":" + newest_tag, "") for img in images]
 
-extra = os.environ.get("EXTRA_IMAGE", "")
-if extra:
-    xregex = re.compile(os.environ["EXTRA_TAG_REGEX"])
+extras = os.environ.get("EXTRA_IMAGE", "").split()
+xregexes = os.environ.get("EXTRA_TAG_REGEX", "").split()
+if len(extras) != len(xregexes):
+    print("EXTRA_IMAGE and EXTRA_TAG_REGEX differ in length", file=sys.stderr); sys.exit(1)
+for extra, xpattern in zip(extras, xregexes):
+    xregex = re.compile(xpattern)
     xnum = lambda tag: [int(x) for x in re.findall(r"\d+", xregex.match(tag).group("ver"))]
     xtags = [t for t in skopeo("list-tags", f"docker://{extra}")["Tags"] if xregex.match(t)]
     xcur = pinned(extra).lstrip(":")
     if xtags and xregex.match(xcur):
         xnew = max(xtags, key=xnum)
         if xnum(xnew) > xnum(xcur):
+            if subprocess.run(["skopeo", "inspect", f"docker://{extra}:{xnew}"], capture_output=True).returncode != 0:
+                print(f"{extra}:{xnew} is listed but cannot be inspected yet, skipped", file=sys.stderr)
+                continue
             bumps.append((extra, ":" + xcur, ":" + xnew, ""))
             newer = True
             newest = f"{newest}, {extra.rsplit('/', 1)[-1]} {xnew}"

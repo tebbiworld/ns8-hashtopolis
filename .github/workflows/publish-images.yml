@@ -52,4 +52,10 @@ jobs:
             fi
             urls="${image}:${IMAGETAG} "$'\n'"${urls}"
           done
+          # runtime images built by build-images.sh (only when their pinned tag
+          # is not published yet) keep exactly that tag
+          for image in ${{ steps.build.outputs.runtime_images }} ; do
+            buildah push "${image}" "docker://${image}"
+            urls="${image} "$'\n'"${urls}"
+          done
           echo "::notice title=Image URLs::${urls}"
