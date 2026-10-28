@@ -26,8 +26,10 @@ Hashtopolis answers behind Traefik
 
 Remember the secrets before the update
     Skip If    '${SCENARIO}' != 'update'    scenario is ${SCENARIO}
-    ${cfg} =    Run task    module/${module_id}/get-configuration    {}
-    Set Global Variable    ${ADMIN_PW_BEFORE}    ${cfg['admin_password']}
+    # The baseline is the last release (1.3.0 or later): get-configuration no
+    # longer returns the password, only get-admin-password does.
+    ${pw} =    Run task    module/${module_id}/get-admin-password    {}
+    Set Global Variable    ${ADMIN_PW_BEFORE}    ${pw['admin_password']}
     Should Not Be Empty    ${ADMIN_PW_BEFORE}
 
 Update to the image under test
