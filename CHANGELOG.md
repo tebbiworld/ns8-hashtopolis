@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.1 — unreleased
+
+### Security
+
+- **MySQL 8.4.11 → 8.4.13.** Oracle's October 2026 Critical Patch Update
+  lists MySQL Server `8.0.0-8.0.49` and `8.4.0-8.4.12` as affected, so the
+  pinned `8.4.11` was vulnerable (31 CVEs of high severity reported for the
+  bundled database in BSI advisory WID-SEC-2026-1199). `8.4.13` is the patched
+  release on the same 8.4 LTS line. The data directory is upgraded in place on
+  the first start and the accounts keep `mysql_native_password`; no setting
+  changes. Data, database contents and settings are unchanged.
+
 ## 1.4.0 — 2026-10-21
 
 ### Security
