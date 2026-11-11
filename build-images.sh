@@ -33,8 +33,8 @@ php_image="docker.io/library/php:8.5.12-apache"
 php_version="${php_image##*:}"; php_version="${php_version%-apache}"
 backend_image="${repobase,,}/hashtopolis-backend:${hashtopolis_version#v}-php${php_version}"
 # MySQL 8.4 LTS (8.0 reached its end of life in April 2026). A data directory
-# of 8.0 is upgraded in place on the first start of 8.4.
-mysql_image="docker.io/library/mysql:8.4.11"
+# of an older 8.4 (or 8.0) patch is upgraded in place on the first start.
+mysql_image="docker.io/library/mysql:8.4.13"
 
 # Runtime images built here and still to be published (CI output below)
 runtime_images=()
